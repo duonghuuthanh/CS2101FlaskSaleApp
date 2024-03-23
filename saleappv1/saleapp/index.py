@@ -1,16 +1,20 @@
-from flask import Flask, render_template, request, redirect
-import dao
+import math
 
-app = Flask(__name__)
+from flask import render_template, request, redirect
+import dao
+from saleapp import app, admin, login
+from flask_login import login_user
 
 
 @app.route('/')
 def index():
     q = request.args.get('q')
     cate_id = request.args.get('category_id')
+    page = request.args.get('page')
 
-    products = dao.load_products(q, cate_id)
-    return render_template('index.html', products=products)
+    products = dao.load_products(q=q, cate_id=cate_id, page=page)
+    return render_template('index.html', products=products,
+                           pages=math.ceil(dao.count_product()/app.config['PAGE_SIZE']))
 
 
 @app.route('/products/<int:id>')
@@ -31,11 +35,28 @@ def login_my_user():
     return render_template('login.html')
 
 
+@app.route("/admin-login", methods=['post'])
+def process_admin_login():
+    username = request.form.get('username')
+    password = request.form.get('password')
+    u = dao.auth_user(username=username, password=password)
+    if u:
+        login_user(user=u)
+
+    return redirect('/admin')
+
+
+
 @app.context_processor
 def common_attributes():
     return {
         'categories': dao.load_categories()
     }
+
+
+@login.user_loader
+def load_user(user_id):
+    return dao.get_user_by_id(user_id)
 
 
 if __name__ == '__main__':
