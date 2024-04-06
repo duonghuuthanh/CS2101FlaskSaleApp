@@ -1,31 +1,31 @@
 from flask_admin import Admin, expose
 from flask_admin.contrib.sqla import ModelView
 from flask_admin import BaseView
-from saleapp.models import Category, Product
+from saleapp.models import Category, Product, UserRole
 from saleapp import app, db
 from flask_login import logout_user, current_user
 from flask import redirect
 
 
-class MyProductView(ModelView):
+class AuthenticatedView(ModelView):
+    def is_accessible(self):
+        return current_user.is_authenticated and current_user.user_role == UserRole.ADMIN
+
+
+class MyProductView(AuthenticatedView):
     column_list = ['id', 'name', 'category_id']
     column_searchable_list = ['id', 'name']
     column_filters = ['id', 'name', 'price']
+    column_editable_list = ['name', 'price']
     can_export = True
     column_labels = {
         'name': 'Tên sản phẩm',
         'category_id': 'Danh mục'
     }
 
-    def is_accessible(self):
-        return current_user.is_authenticated
 
-
-class MyCategoryView(ModelView):
+class MyCategoryView(AuthenticatedView):
     column_list = ['id', 'name', 'products']
-
-    def is_accessible(self):
-        return current_user.is_authenticated
 
 
 class StatsView(BaseView):

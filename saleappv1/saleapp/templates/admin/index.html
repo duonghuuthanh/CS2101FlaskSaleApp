@@ -1,9 +1,9 @@
 {% extends 'admin/master.html' %}
 
 {% block body %}
-<h1 class="text-info">CHÀO MỪNG BẠN ĐẾN TRANG QUẢN TRỊ!</h1>
 
 {% if current_user.is_authenticated %}
+<h1 class="text-info">CHÀO MỪNG BẠN ĐẾN TRANG QUẢN TRỊ!</h1>
 <h2 class="text-success">Chào mừng bạn <span>{{current_user.name}} đã quay lại!</span></h2>
 {% else %}
 <h1 class="text-center text-info mt-1">ĐĂNG NHẬP NGƯỜI DÙNG</h1>
