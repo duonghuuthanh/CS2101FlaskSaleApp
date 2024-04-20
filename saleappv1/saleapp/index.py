@@ -2,8 +2,8 @@ import math
 from flask import render_template, request, redirect, session, jsonify
 import dao
 import utils
-from saleapp import app, admin, login
-from flask_login import login_user, current_user, logout_user
+from saleapp import app, login
+from flask_login import login_user, logout_user, login_required
 import cloudinary.uploader
 from decorators import loggedin
 
@@ -36,7 +36,9 @@ def login_my_user():
         user = dao.auth_user(username=username, password=password)
         if user:
             login_user(user)
-            return redirect('/')
+
+            next = request.args.get('next')
+            return redirect(next if next else '/')
         else:
             err_msg = 'Username hoặc password không đúng!'
 
@@ -125,10 +127,50 @@ def add_to_cart():
     return jsonify(utils.count_cart(cart))
 
 
+@app.route('/cart')
+def cart():
+    return render_template('cart.html')
+
+
+@app.route('/api/cart/<product_id>', methods=['put'])
+def update_cart(product_id):
+    cart = session.get('cart')
+    if cart and product_id in cart:
+        cart[product_id]['quantity'] = request.json['quantity']
+        session['cart'] = cart
+
+    return jsonify(utils.count_cart(cart))
+
+
+@app.route('/api/cart/<product_id>', methods=['delete'])
+def delete_cart(product_id):
+    cart = session.get('cart')
+    if cart and product_id in cart:
+        del cart[product_id]
+        session['cart'] = cart
+
+    return jsonify(utils.count_cart(cart))
+
+
+@app.route("/api/pay", methods=['post'])
+@login_required
+def pay():
+    cart = session.get('cart')
+    try:
+        dao.add_receipt(cart)
+    except Exception as ex:
+        print(ex)
+        return jsonify({'status': 500})
+    else:
+        del session['cart']
+        return jsonify({'status': 200})
+
+
 @app.context_processor
 def common_attributes():
     return {
-        'categories': dao.load_categories()
+        'categories': dao.load_categories(),
+        'cart_stats': utils.count_cart(session.get('cart'))
     }
 
 
@@ -139,4 +181,5 @@ def load_user(user_id):
 
 if __name__ == '__main__':
     with app.app_context():
+        from saleapp import admin
         app.run(debug=True)
