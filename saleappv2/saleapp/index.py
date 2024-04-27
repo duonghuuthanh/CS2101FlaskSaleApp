@@ -4,7 +4,7 @@ import dao
 import utils
 from saleapp import app, login
 from saleapp.models import UserRole
-from flask_login import login_user, logout_user
+from flask_login import login_user, logout_user, login_required
 import cloudinary.uploader
 
 
@@ -31,7 +31,9 @@ def process_login_user():
         u = dao.auth_user(username, password)
         if u:
             login_user(u)
-            return redirect('/')
+
+            next = request.args.get('next')
+            return redirect(next if next else '/')
         else:
             err_msg = 'Tên đăng nhập hoặc mật khẩu không hợp lệ!'
 
@@ -132,9 +134,39 @@ def add_to_cart():
 
     session['cart'] = cart
 
-    print(cart)
+    return jsonify(utils.count_cart(cart))
+
+
+@app.route('/api/cart/<product_id>', methods=['put'])
+def update_cart(product_id):
+    cart = session.get('cart')
+    if cart and product_id in cart:
+        cart[product_id]['quantity'] = int(request.json.get('quantity', 0))
+        session['cart'] = cart
 
     return jsonify(utils.count_cart(cart))
+
+
+@app.route('/api/cart/<product_id>', methods=['delete'])
+def delete_cart(product_id):
+    cart = session.get('cart')
+    if cart and product_id in cart:
+        del cart[product_id]
+        session['cart'] = cart
+
+    return jsonify(utils.count_cart(cart))
+
+
+@app.route('/api/pay', methods=['post'])
+@login_required
+def pay():
+    try:
+        dao.add_receipt(session.get('cart'))
+    except:
+        return jsonify({'status': 500})
+    else:
+        del session['cart']
+        return jsonify({'status': 200})
 
 
 @app.context_processor

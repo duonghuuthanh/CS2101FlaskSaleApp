@@ -14,7 +14,7 @@
 {% if current_user.is_authenticated %}
 <h1 class="text-info mt-1">Chào mừng {{ current_user.username }} quay lại!</h1>
 {% else %}
-<form method="post" action="/login">
+<form method="post">
     <div class="form-floating mb-3 mt-3">
         <input type="text" class="form-control" id="username" placeholder="Tên đăng nhập" name="username" pattern="[a-zA-Z0-9]+" required />
         <label for="username">Tên đăng nhập</label>

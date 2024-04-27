@@ -1,6 +1,8 @@
-from saleapp.models import Category, Product, User, UserRole
+from saleapp.models import Category, Product, User, UserRole, Receipt, ReceiptDetails
 from saleapp import app, db
 import hashlib
+from flask_login import current_user
+from sqlalchemy import func
 
 
 def load_categories():
@@ -47,5 +49,28 @@ def get_user_by_id(id):
     return User.query.get(id)
 
 
+def add_receipt(cart):
+    if cart:
+        r = Receipt(user=current_user)
+        db.session.add(r)
+
+        for d in cart.values():
+            detail = ReceiptDetails(quantity=d['quantity'],
+                                    unit_price=d['price'],
+                                    receipt=r,
+                                    product_id=d['id'])
+            db.session.add(detail)
+
+        db.session.commit()
+
+
+def stats_revenue():
+    query = db.session.query(Product.id, Product.name, func.sum(ReceiptDetails.quantity*ReceiptDetails.unit_price))\
+              .join(ReceiptDetails, ReceiptDetails.product_id.__eq__(Product.id), isouter=True).group_by(Product.id)
+
+    return query.all()
+
+
 if __name__ == '__main__':
-    print(load_categories())
+    with app.app_context():
+        print(stats_revenue())

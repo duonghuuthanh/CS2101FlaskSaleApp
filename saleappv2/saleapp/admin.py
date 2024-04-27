@@ -4,6 +4,7 @@ from flask_admin.contrib.sqla import ModelView
 from saleapp.models import Category, Product, UserRole
 from flask import redirect
 from flask_login import logout_user, current_user
+import dao
 
 admin = Admin(app, name='eCommerce Website', template_mode='bootstrap4')
 
@@ -34,8 +35,8 @@ class ProductView(AdminView):
 class StatsView(MyView):
     @expose('/')
     def index(self):
-
-        return self.render('admin/stats.html')
+        data = dao.stats_revenue()
+        return self.render('admin/stats.html', stats_data=data)
 
 
 class LogoutView(MyView):

@@ -2,9 +2,29 @@
 
 {% block body %}
 <h1 class="text-info text-center mt-1">THỐNG KÊ BÁO CÁO</h1>
-
 <div class="row">
-    <div class="col-md-5 col-6"></div>
+    <div class="col-md-5 col-6">
+        <table class="table">
+            <tr>
+                <th>Id</th>
+                <th>Tên sản phẩm</th>
+                <th>Doanh thu</th>
+            </tr>
+            {% for s in stats_data %}
+            <tr>
+                <td>{{ s[0] }}</td>
+                <td>{{ s[1] }}</td>
+                <td>
+                    {% if s[2] %}
+                    {{ "{:,.0f}".format(s[2]) }} VNĐ
+                    {% else %}
+                    0 VNĐ
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
     <div class="col-md-7 col-6">
         <canvas id="myChart"></canvas>
     </div>
@@ -12,17 +32,30 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    let data = [];
+    let labels = [];
+
+    {% for s in stats_data %}
+        labels.push('{{s[1]}}');
+        {% if s[2] %}
+        data.push({{s[2]}})
+        {% else %}
+        data.push(0)
+        {% endif %}
+    {% endfor %}
+
     window.onload = function() {
         const ctx = document.getElementById('myChart');
 
           new Chart(ctx, {
             type: 'bar',
             data: {
-              labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+              labels: labels,
               datasets: [{
-                label: '# of Votes',
-                data: [12, 19, 3, 5, 2, 3],
-                borderWidth: 1
+                label: '# Doanh thu',
+                data: data,
+                borderWidth: 1,
+                backgroundColor: ['red', 'green', 'blue', 'gold', 'orange', 'brown']
               }]
             },
             options: {
