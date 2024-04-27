@@ -1,5 +1,6 @@
-from saleapp.models import Category, Product
-from saleapp import app
+from saleapp.models import Category, Product, User, UserRole
+from saleapp import app, db
+import hashlib
 
 
 def load_categories():
@@ -25,6 +26,25 @@ def load_products(kw=None, cate_id=None, page=None):
 
 def count_product():
     return Product.query.count()
+
+
+def auth_user(username, password, user_role=UserRole.USER):
+    password = str(hashlib.md5(password.strip().encode('utf-8')).hexdigest())
+    return User.query.filter(User.username.__eq__(username.strip()),
+                             User.password.__eq__(password),
+                             User.user_role.__eq__(user_role)).first()
+
+
+def add_user(name, username, password, avatar):
+    password = str(hashlib.md5(password.strip().encode('utf-8')).hexdigest())
+    u = User(name=name.strip(), username=username.strip(),
+             password=password, avatar=avatar)
+    db.session.add(u)
+    db.session.commit()
+
+
+def get_user_by_id(id):
+    return User.query.get(id)
 
 
 if __name__ == '__main__':

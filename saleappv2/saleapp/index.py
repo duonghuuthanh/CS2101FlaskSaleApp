@@ -1,8 +1,11 @@
 import math
-
-from flask import render_template, request, redirect
+from flask import render_template, request, redirect, jsonify, session
 import dao
-from saleapp import app
+import utils
+from saleapp import app, login
+from saleapp.models import UserRole
+from flask_login import login_user, logout_user
+import cloudinary.uploader
 
 
 @app.route("/")
@@ -25,7 +28,9 @@ def process_login_user():
         username = request.form.get('username')
         password = request.form.get('password')
 
-        if username.__eq__('admin') and password.__eq__('123'):
+        u = dao.auth_user(username, password)
+        if u:
+            login_user(u)
             return redirect('/')
         else:
             err_msg = 'Tên đăng nhập hoặc mật khẩu không hợp lệ!'
@@ -33,10 +38,110 @@ def process_login_user():
     return render_template('login.html', err_msg=err_msg)
 
 
+@app.route('/register', methods=['get', 'post'])
+def process_register():
+    err_msg = None
+    if request.method.__eq__('POST'):
+        try:
+            password = request.form['password']
+            confirm = request.form['confirm']
+
+            if password.__eq__(confirm):
+                avatar = None
+                a = request.files.get('avatar')
+                if a:
+                    res = cloudinary.uploader.upload(a)
+                    avatar = res.get('secure_url')
+
+                try:
+                    dao.add_user(username=request.form['username'],
+                                 password=password,
+                                 name=request.form['name'], avatar=avatar)
+                except:
+                    err_msg = 'Hệ thống đang có lỗi! Vui lòng quay lại sau!'
+                else:
+                    return redirect('/login')
+            else:
+                err_msg = 'Mật khẩu không khớp'
+        except:
+            err_msg = 'Dữ liệu không hợp lệ!'
+
+    return render_template('register.html', err_msg=err_msg)
+
+
+@app.route("/logout")
+def my_user_logout():
+    logout_user()
+    return redirect("/")
+
+
+@app.route('/admin-login', methods=['post'])
+def admin_login():
+    username = request.form.get('username')
+    password = request.form.get('password')
+
+    u = dao.auth_user(username=username, password=password, user_role=UserRole.ADMIN)
+    if u:
+        login_user(user=u)
+
+    return redirect('/admin')
+
+
+@login.user_loader
+def get_user(id):
+    return dao.get_user_by_id(id)
+
+
+@app.route('/cart')
+def cart_view():
+    return render_template('cart.html')
+
+
+@app.route('/api/cart', methods=['post'])
+def add_to_cart():
+    """
+    {
+        "1": {
+            "id": "1",
+            "name": "abc",
+            "price": 12,
+            "quantity": 2
+        }, "2": {
+            "id": "2",
+            "name": "abc",
+            "price": 12,
+            "quantity": 1
+        }
+    }
+    :return:
+    """
+    cart = session.get('cart')
+    if not cart:
+        cart = {}
+
+    id = str(request.json.get('id'))
+    if id in cart:
+        cart[id]['quantity'] += 1
+    else:
+        cart[id] = {
+            "id": id,
+            "name": request.json.get('name'),
+            "price": request.json.get('price'),
+            "quantity": 1
+        }
+
+    session['cart'] = cart
+
+    print(cart)
+
+    return jsonify(utils.count_cart(cart))
+
+
 @app.context_processor
 def common_attributes():
     return {
-        'categories': dao.load_categories()
+        'categories': dao.load_categories(),
+        'cart_stats': utils.count_cart(session.get('cart'))
     }
 
 
