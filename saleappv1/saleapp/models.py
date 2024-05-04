@@ -77,25 +77,29 @@ class Comment(Base):
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-        # c1 = Category(name='Mobile')
-        # c2 = Category(name='Tablet')
-        # c3 = Category(name='Laptop')
-        # db.session.add_all([c1, c2, c3])
-        # db.session.commit()
-        #
-        # import json
-        # with open('data/products.json', encoding='utf-8') as f:
-        #     products = json.load(f)
-        #     for p in products:
-        #         prod = Product(**p)
-        #         db.session.add(prod)
-        #
-        # db.session.commit()
-        #
-        # import hashlib
-        # u = User(name='admin', username='admin',
-        #          avatar='https://res.cloudinary.com/dxxwcby8l/image/upload/v1679731974/jlad6jqdc69cjrh9zggq.jpg',
-        #          password=str(hashlib.md5("123456".encode('utf-8')).hexdigest()),
-        #          user_role=UserRole.ADMIN)
-        # db.session.add(u)
-        # db.session.commit()
+        c1 = Category(name='Mobile')
+        c2 = Category(name='Tablet')
+        c3 = Category(name='Laptop')
+        db.session.add_all([c1, c2, c3])
+        db.session.commit()
+
+        import json
+        with open('data/products.json', encoding='utf-8') as f:
+            products = json.load(f)
+            for p in products:
+                prod = Product(**p)
+                db.session.add(prod)
+
+        db.session.commit()
+
+        import hashlib
+        u = User(name='admin', username='admin',
+                 avatar='https://res.cloudinary.com/dxxwcby8l/image/upload/v1679731974/jlad6jqdc69cjrh9zggq.jpg',
+                 password=str(hashlib.md5("123456".encode('utf-8')).hexdigest()),
+                 user_role=UserRole.ADMIN)
+        u2 = User(name='demo', username='demo',
+                 avatar='https://res.cloudinary.com/dxxwcby8l/image/upload/v1679731974/jlad6jqdc69cjrh9zggq.jpg',
+                 password=str(hashlib.md5("123456".encode('utf-8')).hexdigest()),
+                 user_role=UserRole.USER)
+        db.session.add_all([u, u2])
+        db.session.commit()

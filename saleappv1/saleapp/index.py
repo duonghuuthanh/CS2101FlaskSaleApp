@@ -22,7 +22,8 @@ def index():
 @app.route('/products/<int:id>')
 def details(id):
     product = dao.get_product_by_id(product_id=id)
-    return render_template('product-details.html', product=product)
+    comments = dao.get_comments(product_id=id)
+    return render_template('product-details.html', product=product, comments=comments)
 
 
 @app.route('/login', methods=['get', 'post'])
@@ -164,6 +165,18 @@ def pay():
     else:
         del session['cart']
         return jsonify({'status': 200})
+
+
+@app.route('/api/products/<int:id>/comments', methods=['post'])
+@login_required
+def add_comment(id):
+    data = request.json
+    c = dao.add_comment(content=data.get('content'), product_id=id)
+
+    return jsonify({'id': c.id, 'content': c.content, 'user': {
+        'username': c.user.username,
+        'avatar': c.user.avatar
+    }})
 
 
 @app.context_processor
